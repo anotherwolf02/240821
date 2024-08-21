@@ -1,0 +1,33 @@
+import os
+import platform
+import subprocess
+import time
+
+def ping(host):
+    """
+    Returns True if host (str) responds to a ping request.
+    """
+    # Platform-dependent parameters
+    param = "-n" if platform.system().lower() == "windows" else "-c"
+    
+    # Building the command. '-c 1' sends 1 packet to the host
+    command = ["ping", param, "1", host]
+    
+    return subprocess.call(command) == 0
+
+def check_connection():
+    """
+    Continuously check the internet connection by pinging a known website.
+    """
+    host = "google.com"  # You can change this to any reliable website
+    
+    while True:
+        if ping(host):
+            print(f"{time.ctime()}: Connected to the internet.")
+        else:
+            print(f"{time.ctime()}: No internet connection.")
+        
+        time.sleep(5)  # Wait for 5 seconds before checking again
+
+if __name__ == "__main__":
+    check_connection()
