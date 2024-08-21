@@ -1,0 +1,63 @@
+import psutil
+import smtplib
+import time
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# Email configuration
+sender_email = "your_email@example.com"
+receiver_email = "alert_receiver@example.com"
+password = "your_email_password"
+smtp_server = "smtp.example.com"
+smtp_port = 587
+
+# CPU usage threshold and monitoring interval
+cpu_threshold = 80  # in percentage
+check_interval = 5  # in seconds
+alert_duration = 60  # in seconds (how long the threshold needs to be exceeded before alerting)
+
+def send_email_alert(cpu_usage):
+    """
+    Sends an email alert when CPU usage exceeds the threshold.
+    """
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = receiver_email
+    message["Subject"] = "High CPU Usage Alert"
+
+    body = f"Warning! CPU usage is at {cpu_usage}%."
+    message.attach(MIMEText(body, "plain"))
+
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, message.as_string())
+        server.close()
+        print("Email alert sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email alert: {e}")
+
+def monitor_cpu():
+    """
+    Monitors the CPU usage and sends an alert if the usage exceeds the threshold.
+    """
+    high_usage_start = None
+
+    while True:
+        cpu_usage = psutil.cpu_percent(interval=1)
+
+        if cpu_usage > cpu_threshold:
+            if high_usage_start is None:
+                high_usage_start = time.time()
+            elif time.time() - high_usage_start >= alert_duration:
+                send_email_alert(cpu_usage)
+                high_usage_start = None  # Reset after alert
+        else:
+            high_usage_start = None  # Reset if CPU usage drops
+
+        print(f"CPU Usage: {cpu_usage}%")
+        time.sleep(check_interval)
+
+if __name__ == "__main__":
+    monitor_cpu()
